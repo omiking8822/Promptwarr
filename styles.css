@@ -1,0 +1,184 @@
+/* CityPulse Premium Design System */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --color-primary: #3b82f6;
+  --color-primary-dark: #1d4ed8;
+  --color-accent: #06b6d4;
+  --color-danger: #ef4444;
+  --color-warning: #f59e0b;
+  --color-success: #10b981;
+  --color-bg-dark: #0b0f19;
+  --color-card-dark: #131b2e;
+  --color-border-dark: #1f293d;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-bg-dark);
+  color: #f3f4f6;
+  overflow-x: hidden;
+}
+
+/* Glassmorphism styling */
+.glass-panel {
+  background: rgba(19, 27, 46, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-card {
+  background: rgba(26, 36, 61, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+  border-color: rgba(59, 130, 246, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.5), 0 0 20px -5px rgba(59, 130, 246, 0.2);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0b0f19;
+}
+::-webkit-scrollbar-thumb {
+  background: #25334e;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3b82f6;
+}
+
+/* Pulse animation */
+@keyframes pulse-ring {
+  0% { transform: scale(0.9); opacity: 0.8; }
+  50% { transform: scale(1.3); opacity: 0.2; }
+  100% { transform: scale(0.9); opacity: 0.8; }
+}
+
+.live-pulse-dot {
+  position: relative;
+}
+.live-pulse-dot::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border-radius: 50%;
+  background-color: #ef4444;
+  animation: pulse-ring 2s infinite ease-in-out;
+  z-index: 0;
+}
+
+/* Map specific styling */
+#map {
+  height: 100%;
+  width: 100%;
+  border-radius: 1rem;
+  z-index: 10;
+}
+
+.leaflet-container {
+  font-family: var(--font-sans) !important;
+  background-color: #0b0f19 !important;
+}
+
+/* Custom Leaflet Markers */
+.custom-pin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: white;
+  font-weight: bold;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  border: 2px solid #ffffff;
+  transition: transform 0.2s ease;
+}
+
+.custom-pin:hover {
+  transform: scale(1.2);
+  z-index: 9999 !important;
+}
+
+.pin-food { background: linear-gradient(135deg, #f97316, #ea580c); }
+.pin-gem { background: linear-gradient(135deg, #a855f7, #7e22ce); }
+.pin-heritage { background: linear-gradient(135deg, #eab308, #ca8a04); }
+.pin-hotel { background: linear-gradient(135deg, #06b6d4, #0891b2); }
+.pin-attraction { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+.pin-hazard { background: linear-gradient(135deg, #ef4444, #b91c1c); }
+
+/* Custom Popup Styling */
+.leaflet-popup-content-wrapper {
+  background: #131b2e !important;
+  color: #f3f4f6 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 0.75rem !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6) !important;
+  padding: 0 !important;
+}
+.leaflet-popup-content {
+  margin: 0 !important;
+  line-height: 1.4 !important;
+}
+.leaflet-popup-tip {
+  background: #131b2e !important;
+}
+
+/* Audio Player Progress Wave */
+.audio-wave-bar {
+  display: inline-block;
+  width: 3px;
+  background-color: #38bdf8;
+  border-radius: 2px;
+  animation: wave-bounce 1.2s ease-in-out infinite;
+}
+
+@keyframes wave-bounce {
+  0%, 100% { height: 6px; }
+  50% { height: 22px; }
+}
+
+/* SOS Pulsing Alarm Modal */
+@keyframes sos-glow {
+  0%, 100% { box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); border-color: #ef4444; }
+  50% { box-shadow: 0 0 35px rgba(239, 68, 68, 0.9); border-color: #f87171; }
+}
+
+.sos-active {
+  animation: sos-glow 1.5s infinite;
+}
+
+/* Chat message bubbles */
+.chat-bubble-bot {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-top-left-radius: 0.25rem;
+}
+
+.chat-bubble-user {
+  background: #2563eb;
+  color: white;
+  border-top-right-radius: 0.25rem;
+}
+
+/* Category Filter Active Pill */
+.filter-btn.active-filter {
+  background-color: #2563eb !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4) !important;
+  border-color: #3b82f6 !important;
+}
+

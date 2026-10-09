@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CityPulse 360 | Multi-City Urban Exploration & Safety Navigator</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              900: '#1e3a8a'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-blue-600 selection:text-white">
+
+  <!-- TOP HEADER / TICKER BAR -->
+  <header class="glass-panel sticky top-0 z-50 border-b border-slate-800/80 px-4 py-2.5">
+    <div class="w-full max-w-[1720px] mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
+      
+      <!-- Brand & Multi-City Selector -->
+      <div class="flex items-center gap-3 w-full md:w-auto justify-between md:justify-start">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-400 flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/20 text-base">
+            ⚡
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="font-extrabold text-base md:text-lg tracking-tight bg-gradient-to-r from-white via-slate-200 to-blue-400 bg-clip-text text-transparent">
+                CityPulse 360
+              </h1>
+              <span class="inline-flex items-center gap-1 text-[10px] bg-red-950/90 text-red-400 border border-red-800 px-2 py-0.5 rounded-full font-bold">
+                <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping"></span> MULTI-CITY
+              </span>
+            </div>
+            <p class="text-[11px] text-slate-400 hidden sm:block truncate max-w-sm" id="header-city-tagline">
+              Explore, Experience & Navigate Urban India
+            </p>
+          </div>
+        </div>
+
+        <!-- 15 Indian Cities Selector -->
+        <div class="flex items-center gap-2 bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-1.5 shadow-inner">
+          <span class="text-xs text-slate-400 flex items-center gap-1">📍 <strong class="text-white hidden sm:inline">City:</strong></span>
+          <select id="city-select" class="bg-transparent text-xs font-bold text-blue-300 focus:outline-none cursor-pointer">
+            <option value="Pune" class="bg-slate-900 text-white">Pune, Maharashtra</option>
+            <option value="Mumbai" class="bg-slate-900 text-white" selected>Mumbai, Maharashtra</option>
+            <option value="Nagpur" class="bg-slate-900 text-white">Nagpur, Maharashtra</option>
+            <option value="Nashik" class="bg-slate-900 text-white">Nashik, Maharashtra</option>
+            <option value="Delhi" class="bg-slate-900 text-white">Delhi</option>
+            <option value="Bengaluru" class="bg-slate-900 text-white">Bengaluru, Karnataka</option>
+            <option value="Hyderabad" class="bg-slate-900 text-white">Hyderabad, Telangana</option>
+            <option value="Chennai" class="bg-slate-900 text-white">Chennai, Tamil Nadu</option>
+            <option value="Kolkata" class="bg-slate-900 text-white">Kolkata, West Bengal</option>
+            <option value="Jaipur" class="bg-slate-900 text-white">Jaipur, Rajasthan</option>
+            <option value="Ahmedabad" class="bg-slate-900 text-white">Ahmedabad, Gujarat</option>
+            <option value="Goa" class="bg-slate-900 text-white">Goa</option>
+            <option value="Varanasi" class="bg-slate-900 text-white">Varanasi, Uttar Pradesh</option>
+            <option value="Agra" class="bg-slate-900 text-white">Agra, Uttar Pradesh</option>
+            <option value="Kochi" class="bg-slate-900 text-white">Kochi, Kerala</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Telemetry Widgets with Honest Data Notices -->
+      <div class="flex items-center gap-2 md:gap-3 flex-wrap justify-center text-xs">
+        
+        <!-- City Heading Tag -->
+        <div class="hidden lg:flex items-center gap-1.5 px-3 py-1 bg-slate-900/80 border border-slate-800 rounded-full text-slate-300">
+          <span class="text-blue-400 font-bold" id="header-city-name">Mumbai, Maharashtra</span>
+        </div>
+
+        <!-- Weather -->
+        <div class="flex items-center gap-1.5 bg-slate-900/90 border border-slate-800 px-3 py-1 rounded-full" title="Demo Environmental Telemetry">
+          <span>⛅</span>
+          <span id="header-weather-temp" class="font-bold text-white">31°C</span>
+          <span id="header-weather-cond" class="text-slate-400 text-[11px] hidden sm:inline">Partly Cloudy</span>
+        </div>
+
+        <!-- AQI Badge -->
+        <div id="header-aqi-pill" class="text-xs px-2.5 py-1 rounded-full font-bold bg-amber-950 text-amber-400 border border-amber-800" title="Sample Environmental Index">
+          <span id="header-aqi-val">AQI 142</span>
+        </div>
+
+        <!-- Traffic Choke Pill -->
+        <div id="header-traffic-pill" class="text-xs px-3 py-1 rounded-full font-semibold bg-red-950/80 text-red-400 border border-red-800 flex items-center gap-1.5" title="Sample Traffic Index">
+          Traffic: 74%
+        </div>
+
+        <!-- Emergency SOS Button -->
+        <button onclick="openEmergencyModal()" class="bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white font-extrabold text-xs px-3.5 py-1.5 rounded-full shadow-lg shadow-red-600/30 flex items-center gap-1.5 transition transform active:scale-95">
+          <span class="animate-pulse">🚨</span> SOS HELP
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Live Advisory Ribbon -->
+    <div class="w-full max-w-[1720px] mx-auto mt-2 pt-2 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-amber-300/90">
+      <div class="flex items-center gap-2 truncate">
+        <span class="bg-amber-900/60 text-amber-300 font-bold px-1.5 py-0.5 rounded text-[10px]">TRAVEL ADVISORY</span>
+        <span id="header-weather-alert" class="truncate font-medium">
+          High Tide Advisory. Waterlogging warning for low-lying coastal underpasses.
+        </span>
+      </div>
+      <div class="flex items-center gap-2 shrink-0 ml-2">
+        <span class="text-[10px] text-slate-500 hidden sm:inline">[Demo Telemetry]</span>
+        <button onclick="switchTab('insights')" class="text-blue-400 hover:underline">
+          View Pulse →
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- NAVIGATION TABS -->
+  <nav class="bg-slate-900/90 border-b border-slate-800 sticky top-[98px] md:top-[85px] z-40 px-4">
+    <div class="w-full max-w-[1720px] mx-auto flex overflow-x-auto no-scrollbar gap-1 py-2 text-xs md:text-sm font-semibold">
+      
+      <button onclick="switchTab('explore')" id="btn-tab-explore" class="nav-tab-btn active-nav-tab flex items-center gap-1.5 px-4 py-2 rounded-lg text-slate-300 hover:text-white transition whitespace-nowrap">
+        <span>🗺️</span> Explore & Food
+      </button>
+
+      <button onclick="switchTab('culture')" id="btn-tab-culture" class="nav-tab-btn flex items-center gap-1.5 px-4 py-2 rounded-lg text-slate-300 hover:text-white transition whitespace-nowrap">
+        <span>🏛️</span> History & Culture
+      </button>
+
+      <button onclick="switchTab('safety')" id="btn-tab-safety" class="nav-tab-btn flex items-center gap-1.5 px-4 py-2 rounded-lg text-slate-300 hover:text-white transition whitespace-nowrap">
+        <span>🛡️</span> SafeWay Navigator
+      </button>
+
+      <button onclick="switchTab('compare')" id="btn-tab-compare" class="nav-tab-btn flex items-center gap-1.5 px-4 py-2 rounded-lg text-slate-300 hover:text-white transition whitespace-nowrap">
+        <span>⚖️</span> Best vs. Worst
+      </button>
+
+      <button onclick="switchTab('insights')" id="btn-tab-insights" class="nav-tab-btn flex items-center gap-1.5 px-4 py-2 rounded-lg text-slate-300 hover:text-white transition whitespace-nowrap">
+        <span>📡</span> Smart City Pulse
+      </button>
+
+      <button onclick="switchTab('pulsebot')" id="btn-tab-pulsebot" class="nav-tab-btn flex items-center gap-1.5 px-4 py-2 rounded-lg text-slate-300 hover:text-white transition whitespace-nowrap text-blue-400">
+        <span>🤖</span> PulseBot AI Concierge
+      </button>
+
+    </div>
+  </nav>
+
+  <!-- MAIN DASHBOARD CONTAINER (FLUID RESPONSIVE WIDTH) -->
+  <main class="flex-1 w-full max-w-[1720px] mx-auto p-3 sm:p-5 flex flex-col">
+
+    <!-- ========================================== -->
+    <!-- TAB 1: EXPLORATION & FOOD -->
+    <!-- ========================================== -->
+    <section id="tab-explore" class="tab-content flex-1 flex flex-col gap-4">
+      
+      <!-- Top Filters & Search Bar -->
+      <div class="glass-panel p-3.5 rounded-2xl flex flex-col lg:flex-row items-center justify-between gap-3 border border-slate-800">
+        
+        <!-- 8 Functional Category Filter Buttons -->
+        <div class="flex items-center gap-1.5 overflow-x-auto w-full lg:w-auto no-scrollbar py-1">
+          <button data-category="all" class="filter-btn active-filter text-xs px-3 py-1.5 rounded-lg bg-blue-600 text-white font-medium whitespace-nowrap">
+            All Places
+          </button>
+          <button data-category="food" class="filter-btn text-xs px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 font-medium whitespace-nowrap">
+            🍔 Street Food & Dining
+          </button>
+          <button data-category="hidden_gem" class="filter-btn text-xs px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 font-medium whitespace-nowrap">
+            💎 Hidden Gems
+          </button>
+          <button data-category="historical" class="filter-btn text-xs px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 font-medium whitespace-nowrap">
+            🏛️ Historical Places
+          </button>
+          <button data-category="hotel" class="filter-btn text-xs px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 font-medium whitespace-nowrap">
+            🏨 Stays & Hostels
+          </button>
+          <button data-category="scenic" class="filter-btn text-xs px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 font-medium whitespace-nowrap">
+            🌅 Scenic Promenades
+          </button>
+          <button data-category="park" class="filter-btn text-xs px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 font-medium whitespace-nowrap">
+            🍃 Parks & Gardens
+          </button>
+          <button data-category="budget" class="filter-btn text-xs px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 font-medium whitespace-nowrap">
+            💰 Budget-Friendly ($)
+          </button>
+        </div>
+
+        <!-- Search Input -->
+        <div class="relative w-full lg:w-72">
+          <input type="text" id="search-explore" placeholder="Search dish, landmark, amenities..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 shadow-inner">
+          <span class="absolute right-3 top-1.5 text-xs text-slate-400">🔍</span>
+        </div>
+
+      </div>
+
+      <!-- Main Layout: Map (Left 7 Cols) + Cards (Right 5 Cols) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-1">
+        
+        <!-- Interactive Leaflet Map with Google Earth Satellite & 3D Switcher -->
+        <div class="lg:col-span-7 h-[500px] lg:h-[700px] rounded-2xl overflow-hidden glass-panel relative border border-slate-800 flex flex-col">
+          
+          <!-- Map & Earth Mode Switcher Toolbar -->
+          <div class="bg-slate-900/90 backdrop-blur border-b border-slate-800 px-3 py-2 flex items-center justify-between z-20">
+            <div class="flex items-center gap-1.5">
+              <span class="text-[11px] text-slate-400 font-semibold mr-1">Layer:</span>
+              <button onclick="switchMapMode('satellite')" data-mode="satellite" class="map-layer-btn px-2.5 py-1 rounded-md text-xs font-bold bg-blue-600 text-white shadow">
+                🛰️ Google Satellite
+              </button>
+              <button onclick="switchMapMode('streets')" data-mode="streets" class="map-layer-btn px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700">
+                🗺️ Street Map
+              </button>
+              <button onclick="switchMapMode('earth_3d')" data-mode="earth_3d" class="map-layer-btn px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700">
+                🌍 3D Earth Embed
+              </button>
+            </div>
+
+            <!-- Direct Google Earth 3D Launcher with user's exact link -->
+            <a id="btn-open-google-earth" 
+               href="https://earth.google.com/web/search/Pune,+Maharashtra/@18.5035801,73.8746239,584.0166196a,35272.37101018d,35y,0h,0t,0r/data=CjsaDQoJL20vMDE1eTJxGAIiJgokCQbwPfsBNTdAEQbwPfsBNTfAGc50t0M4dEpAIct0t0M4dErAQgIIAToDCgEwQgIIAEoNCP___________wEQAA" 
+               target="_blank" 
+               rel="noopener noreferrer" 
+               class="bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-bold text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-lg shadow-cyan-500/20 transition transform hover:scale-[1.02] active:scale-95 whitespace-nowrap">
+              <span>🌍</span> Open in Google Earth 3D ↗
+            </a>
+          </div>
+
+          <!-- Main Interactive Leaflet Map (Google Earth Satellite Imagery) -->
+          <div id="map" class="flex-1 w-full h-full"></div>
+
+          <!-- Google Earth 3D Embed View (Toggled via toolbar) -->
+          <div id="google-earth-3d-container" class="hidden flex-1 w-full h-full relative bg-slate-950">
+            <iframe id="google-earth-embed-frame" 
+                    src="https://maps.google.com/maps?q=Pune&t=k&z=13&ie=UTF8&iwloc=&output=embed" 
+                    class="w-full h-full border-0" 
+                    allowfullscreen="" 
+                    loading="lazy">
+            </iframe>
+            <div class="absolute top-3 left-3 bg-slate-900/90 backdrop-blur border border-blue-500/50 p-2.5 rounded-xl text-xs text-slate-200 z-10 shadow-2xl flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+              <span>Photorealistic 3D Satellite View Active</span>
+              <a id="earth-3d-direct-link" href="https://earth.google.com/web/search/Pune,+Maharashtra/@18.5035801,73.8746239,584.0166196a,35272.37101018d,35y,0h,0t,0r/data=CjsaDQoJL20vMDE1eTJxGAIiJgokCQbwPfsBNTdAEQbwPfsBNTfAGc50t0M4dEpAIct0t0M4dErAQgIIAToDCgEwQgIIAEoNCP___________wEQAA" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:underline font-bold ml-2">
+                Launch Full WebGL Globe ↗
+              </a>
+            </div>
+          </div>
+          
+          <!-- Fallback Notice in case tiles fail -->
+          <div id="map-offline-notice" class="hidden absolute top-14 left-3 bg-amber-950/90 border border-amber-700 text-amber-200 text-xs p-2 rounded-lg z-[999]">
+            ⚠️ Tile network delay. Showing destination markers on grid.
+          </div>
+
+          <!-- Map Legend Overlay -->
+          <div class="absolute bottom-3 left-3 bg-slate-900/95 backdrop-blur border border-slate-800 p-2.5 rounded-xl text-[11px] text-slate-300 z-[999] flex flex-wrap gap-3 pointer-events-auto shadow-2xl">
+            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-orange-500"></span> Food</span>
+            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span> Gem</span>
+            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-yellow-500"></span> History</span>
+            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-cyan-500"></span> Stay</span>
+            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Scenic/Park</span>
+            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-red-500"></span> Caution</span>
+          </div>
+        </div>
+
+        <!-- Place Cards Grid -->
+        <div class="lg:col-span-5 h-[500px] lg:h-[700px] overflow-y-auto pr-1">
+          <div id="explore-cards-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3.5">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 2: HISTORY & CULTURE TRAIL -->
+    <!-- ========================================== -->
+    <section id="tab-culture" class="tab-content hidden flex-1 flex flex-col gap-4">
+      
+      <div class="glass-panel p-5 rounded-2xl border border-amber-900/40">
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+          <div>
+            <h2 class="text-xl font-extrabold text-amber-400 flex items-center gap-2">
+              <span>🏛️</span> Heritage, Architecture & Living Traditions
+            </h2>
+            <p class="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
+              Explore monumental landmarks, ancient temple ghats, colonial architecture, and deep living traditions. Listen to narrated audio walking scripts as you explore.
+            </p>
+          </div>
+          <div class="bg-amber-950/60 border border-amber-800 px-3.5 py-1.5 rounded-xl text-xs text-amber-300 font-semibold flex items-center gap-1.5 shadow">
+            <span>🎧</span> Audio Walking Tours Enabled
+          </div>
+        </div>
+      </div>
+
+      <!-- Heritage Cards Grid -->
+      <div id="culture-cards-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Dynamically populated -->
+      </div>
+
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 3: SAFETY & SAFEWAY NAVIGATOR -->
+    <!-- ========================================== -->
+    <section id="tab-safety" class="tab-content hidden flex-1 flex flex-col gap-4">
+      
+      <!-- SafeWay Routing Controller -->
+      <div class="glass-panel p-4 rounded-2xl border border-blue-900/50">
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-xl font-extrabold text-emerald-400 flex items-center gap-2">
+              <span>🛡️</span> SafeWay Route Navigator
+            </h2>
+            <p class="text-xs text-slate-300 mt-0.5">
+              Dual Path Algorithm: Compare fastest shortcuts with verified, well-lit, police-monitored routes.
+            </p>
+            <p class="text-[10px] text-slate-400 italic mt-0.5">
+              Notice: Route and safety metrics represent advisory community guidance. Never guarantee 100% safety.
+            </p>
+          </div>
+
+          <!-- Quick Route Presets -->
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="text-xs text-slate-400 font-medium">Demo Paths:</span>
+            <button onclick="loadPresetRoute('mum_cst_to_gateway')" class="bg-slate-800 hover:bg-slate-700 text-blue-300 border border-slate-700 text-xs px-3 py-1.5 rounded-lg font-semibold transition">
+              Mumbai: CST → Gateway
+            </button>
+            <button onclick="loadPresetRoute('pune_fc_to_shaniwar')" class="bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-slate-700 text-xs px-3 py-1.5 rounded-lg font-semibold transition">
+              Pune: FC Rd → Shaniwar Wada
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Route Comparison Result Card -->
+      <div id="route-comparison-details">
+        <div class="p-6 text-center text-slate-400 glass-card rounded-2xl">
+          <p class="text-xs">Click one of the demo paths above or click "SafeWay" on any destination card to evaluate real-time advisory routes.</p>
+        </div>
+      </div>
+
+      <!-- Safety Summary Metrics -->
+      <div id="safety-metrics-grid" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <!-- Dynamically populated -->
+      </div>
+
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 4: BEST VS WORST NEIGHBORHOOD INDEX -->
+    <!-- ========================================== -->
+    <section id="tab-compare" class="tab-content hidden flex-1 flex flex-col gap-4">
+      
+      <div class="glass-panel p-4 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4 border border-slate-800">
+        <div>
+          <h2 class="text-xl font-extrabold text-pink-400 flex items-center gap-2">
+            <span>⚖️</span> Urban Comparison Matrix: Best vs. Worst
+          </h2>
+          <p class="text-xs text-slate-300 mt-0.5">
+            Benchmark districts side-by-side across Safety, Cleanliness, AQI, Affordability, and Transit.
+          </p>
+        </div>
+
+        <!-- Comparative Dropdowns -->
+        <div class="flex items-center gap-2">
+          <div class="bg-slate-900 border border-blue-500/50 rounded-xl px-3 py-1">
+            <span class="text-[10px] text-blue-400 font-bold block">District A:</span>
+            <select id="compare-select-a" onchange="updateComparison()" class="bg-transparent text-xs font-bold text-white focus:outline-none"></select>
+          </div>
+          <span class="text-slate-500 font-bold text-xs">VS</span>
+          <div class="bg-slate-900 border border-pink-500/50 rounded-xl px-3 py-1">
+            <span class="text-[10px] text-pink-400 font-bold block">District B:</span>
+            <select id="compare-select-b" onchange="updateComparison()" class="bg-transparent text-xs font-bold text-white focus:outline-none"></select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Radar Chart Visualizer -->
+      <div class="glass-panel p-4 rounded-2xl border border-slate-800">
+        <h4 class="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">6-Dimensional Metric Radar</h4>
+        <div class="h-64 sm:h-80 w-full relative">
+          <canvas id="compareRadarChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Side-by-Side Pros, Cons & Benchmarks -->
+      <div id="compare-details-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Dynamically populated -->
+      </div>
+
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 5: SMART CITY PULSE & CITIZEN REPORTS -->
+    <!-- ========================================== -->
+    <section id="tab-insights" class="tab-content hidden flex-1 flex flex-col gap-4">
+      
+      <!-- Top Action Bar -->
+      <div class="glass-panel p-4 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border border-slate-800">
+        <div>
+          <h2 class="text-xl font-extrabold text-cyan-400 flex items-center gap-2">
+            <span>📡</span> Smart City Pulse & Crowdsourced Intelligence
+          </h2>
+          <p class="text-xs text-slate-300 mt-0.5">
+            Municipal telemetry, citizen voice reports, NLP sentiment analysis, and traffic choke-points.
+          </p>
+        </div>
+        <button onclick="document.getElementById('modal-report').classList.remove('hidden')" class="bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl flex items-center gap-2 shadow-lg shadow-blue-600/30">
+          <span>📢</span> Report Issue / Post Gem
+        </button>
+      </div>
+
+      <!-- Telemetry Dashboard: Traffic Bottlenecks & NLP Mood -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        
+        <!-- Live Traffic Bottlenecks -->
+        <div class="lg:col-span-5 glass-panel p-4 rounded-2xl border border-slate-800 flex flex-col">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-bold text-white flex items-center gap-1.5">
+              <span>🚗</span> Active Traffic Bottlenecks
+            </h3>
+            <span class="text-[10px] text-red-400 font-semibold">[Sample Sensors]</span>
+          </div>
+          <div id="traffic-bottlenecks-list" class="space-y-2 flex-1 overflow-y-auto max-h-72 pr-1">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- Social Media Sentiment & Urban Mood -->
+        <div class="lg:col-span-7 glass-panel p-4 rounded-2xl border border-slate-800 flex flex-col">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-sm font-bold text-white flex items-center gap-1.5">
+              <span>💬</span> Citizen Mood & Social Sentiment Stream (NLP)
+            </h3>
+            <span class="text-[10px] text-emerald-400 font-semibold">[Simulated Stream]</span>
+          </div>
+          
+          <!-- Sentiment Bar -->
+          <div class="mb-3">
+            <div id="sentiment-progress-bar" class="h-2 w-full rounded-full overflow-hidden flex bg-slate-800 mb-1">
+              <!-- Dynamically populated -->
+            </div>
+            <span id="sentiment-stats" class="text-[11px] text-slate-400 font-medium">Analyzing sentiment...</span>
+          </div>
+
+          <div id="social-feed-container" class="space-y-2.5 flex-1 overflow-y-auto max-h-60 pr-1">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Crowdsourced Citizen Reports Feed -->
+      <div class="glass-panel p-4 rounded-2xl border border-slate-800">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-bold text-white flex items-center gap-1.5">
+            <span>🛡️</span> Community Incident Reports & Discoveries
+          </h3>
+          <span class="text-[11px] text-slate-400">[Unverified Citizen Submissions]</span>
+        </div>
+        <div id="citizen-reports-list" class="space-y-3">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 6: PULSEBOT AI CONCIERGE -->
+    <!-- ========================================== -->
+    <section id="tab-pulsebot" class="tab-content hidden flex-1 flex flex-col gap-4">
+      
+      <div class="glass-panel p-4 rounded-2xl border border-blue-900/40 flex-1 flex flex-col h-[650px]">
+        
+        <!-- Header -->
+        <div class="pb-3 border-b border-slate-800 flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center font-bold text-white">
+              🤖
+            </div>
+            <div>
+              <h3 class="font-bold text-sm text-white">PulseBot AI City Concierge</h3>
+              <p class="text-[11px] text-slate-400">Local Rule-Based NLP Recommendation Engine (Offline Intelligent Assistant)</p>
+            </div>
+          </div>
+          <span class="text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-800 px-2.5 py-0.5 rounded-full font-bold">
+            Local Engine Active
+          </span>
+        </div>
+
+        <!-- Chat History -->
+        <div id="chat-messages-container" class="flex-1 overflow-y-auto p-3 space-y-3">
+          <!-- Chat messages dynamically appended here -->
+        </div>
+
+        <!-- Quick Prompts Row -->
+        <div class="py-2 flex items-center gap-2 overflow-x-auto no-scrollbar border-t border-slate-800/80">
+          <span class="text-[11px] text-slate-400 shrink-0">Try asking:</span>
+          <button onclick="handleQuickPrompt('Best local food spots and street dining')" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded-full whitespace-nowrap transition border border-slate-700">
+            🍔 Best Local Food
+          </button>
+          <button onclick="handleQuickPrompt('Is this area safe to walk alone at night?')" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded-full whitespace-nowrap transition border border-slate-700">
+            🛡️ Safe to walk at night?
+          </button>
+          <button onclick="handleQuickPrompt('Historical landmarks and heritage walking tour')" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded-full whitespace-nowrap transition border border-slate-700">
+            🏛️ Heritage Walking Tour
+          </button>
+          <button onclick="handleQuickPrompt('Compare top districts in this city')" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded-full whitespace-nowrap transition border border-slate-700">
+            ⚖️ Compare Districts
+          </button>
+        </div>
+
+        <!-- Input Box -->
+        <div class="pt-2 flex items-center gap-2">
+          <input type="text" id="chat-input" placeholder="Ask about food gems, heritage tours, safety guidance..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 shadow-inner">
+          <button onclick="sendMessage()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-lg transition">
+            Send ↵
+          </button>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ========================================== -->
+  <!-- MODAL: PLACE DETAILS -->
+  <!-- ========================================== -->
+  <div id="modal-place-detail" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-5 relative shadow-2xl">
+      <button onclick="closeModal('modal-place-detail')" class="absolute top-4 right-4 bg-slate-800 hover:bg-slate-700 text-slate-300 w-8 h-8 rounded-full flex items-center justify-center font-bold z-10">
+        ✕
+      </button>
+      <div id="place-modal-body"></div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: CITIZEN REPORT SUBMISSION -->
+  <!-- ========================================== -->
+  <div id="modal-report" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 relative shadow-2xl">
+      <button onclick="closeModal('modal-report')" class="absolute top-4 right-4 bg-slate-800 hover:bg-slate-700 text-slate-300 w-8 h-8 rounded-full flex items-center justify-center font-bold">
+        ✕
+      </button>
+
+      <h3 class="text-xl font-bold text-white mb-1 flex items-center gap-2">
+        <span>📢</span> Crowdsource Urban Intelligence
+      </h3>
+      <p class="text-xs text-slate-400 mb-4">
+        Report hazards, broken streetlights, or share newly discovered hidden gems. Our local classifier tags urgency and sentiment.
+      </p>
+
+      <form id="citizen-report-form" onsubmit="submitCitizenReport(event)" class="space-y-3.5">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Category</label>
+          <select id="report-category" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-blue-500">
+            <option value="Safety Hazard">Safety Hazard / Dark Stretch</option>
+            <option value="Streetlight Outage">Streetlight Outage</option>
+            <option value="Traffic Jam">Traffic Choke-point / Breakdown</option>
+            <option value="Pothole/Road Issue">Pothole / Road Cave-in</option>
+            <option value="Cleanliness Alert">Cleanliness / Overflowing Waste</option>
+            <option value="Hidden Gem">Hidden Gem / Food Discovery</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Title</label>
+          <input type="text" id="report-title" placeholder="e.g. Broken Streetlight on Station Lane" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-blue-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Specific Location / Landmark</label>
+          <input type="text" id="report-location" placeholder="e.g. Near Market West Gate" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-blue-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Description</label>
+          <textarea id="report-desc" rows="3" placeholder="Provide details on visibility, safety concerns, or culinary discovery..." required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-blue-500"></textarea>
+        </div>
+
+        <!-- Voice Note Recording -->
+        <div class="p-3 bg-slate-950 rounded-lg border border-slate-800">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+              <span>🎙️</span> Voice Note (Speech-to-Text)
+            </span>
+            <span id="recording-indicator" class="hidden text-[11px] text-red-400 font-bold animate-pulse">● RECORDING AUDIO...</span>
+          </div>
+          <div class="flex gap-2">
+            <input type="text" id="report-voice-transcript" placeholder="Transcribed audio will appear here..." class="flex-1 bg-slate-900 border border-slate-800 rounded-md p-2 text-xs text-slate-300">
+            <button type="button" id="btn-voice-record" onclick="toggleVoiceRecording()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 rounded-md border border-slate-700 font-semibold transition flex items-center gap-1">
+              🎤 Record
+            </button>
+          </div>
+        </div>
+
+        <!-- Photo Upload Preview -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Photo Attachment (Optional)</label>
+          <input type="file" accept="image/*" onchange="handlePhotoSelect(event)" class="text-xs text-slate-400 file:mr-2 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-slate-800 file:text-slate-200 hover:file:bg-slate-700">
+          <img id="report-photo-preview" class="hidden mt-2 h-28 w-full object-cover rounded-lg border border-slate-800" alt="Preview">
+        </div>
+
+        <button type="submit" id="btn-submit-report" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 rounded-lg text-xs shadow-lg transition">
+          Submit Citizen Report
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: EMERGENCY SOS DISPATCH HUB -->
+  <!-- ========================================== -->
+  <div id="modal-sos" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-slate-900 border-2 border-red-600/80 rounded-2xl max-w-md w-full p-6 relative shadow-2xl sos-active">
+      <button onclick="closeModal('modal-sos')" class="absolute top-4 right-4 bg-slate-800 hover:bg-slate-700 text-slate-300 w-8 h-8 rounded-full flex items-center justify-center font-bold">
+        ✕
+      </button>
+
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center text-2xl font-bold text-white animate-bounce">
+          🚨
+        </div>
+        <div>
+          <h3 class="text-xl font-black text-white">EMERGENCY SOS HUB</h3>
+          <p class="text-xs text-red-400 font-medium">Immediate Assistance & Beacon Dispatch</p>
+        </div>
+      </div>
+
+      <!-- One-Tap Live Beacon Button -->
+      <div class="my-4">
+        <button onclick="triggerLiveSOS()" class="w-full bg-red-600 hover:bg-red-500 text-white font-black text-sm py-3.5 rounded-xl shadow-lg shadow-red-600/50 flex items-center justify-center gap-2 transition active:scale-95">
+          <span>📡</span> BROADCAST SIMULATED GPS TO POLICE
+        </button>
+      </div>
+
+      <div id="sos-dispatch-status" class="hidden mb-4"></div>
+
+      <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Emergency Helplines:</h4>
+      <div id="sos-contacts-list" class="space-y-2 max-h-56 overflow-y-auto pr-1">
+        <!-- Dynamically populated -->
+      </div>
+    </div>
+  </div>
+
+  <!-- APPLICATION SCRIPTS -->
+  <script src="/static/js/map.js"></script>
+  <script src="/static/js/compare.js"></script>
+  <script src="/static/js/reporting.js"></script>
+  <script src="/static/js/pulsebot.js"></script>
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
